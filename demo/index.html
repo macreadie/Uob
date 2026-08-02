@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course Drift — University of Brighton</title>
+<style>
+  :root {
+    --page-bg: #060d15;
+    --page-fg: #ffffff;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--page-fg);
+  }
+
+  /* Space above and below so the scroll-velocity coupling is visible. */
+  .spacer {
+    display: grid;
+    place-items: center;
+    min-height: 70vh;
+    padding: 60px 24px;
+    text-align: center;
+  }
+
+  .spacer h1 {
+    margin: 0 0 14px;
+    font-size: clamp(30px, 6vw, 62px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .spacer p {
+    max-width: 52ch;
+    margin: 0 auto;
+    font-size: 17px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .hint {
+    margin-top: 28px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Theme switcher — demo only, not part of the component. */
+  .themes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+  }
+
+  .themes button {
+    padding: 9px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .themes button:hover { background: rgba(255, 255, 255, 0.08); }
+
+  .theme-light {
+    --uob-bg: #f4f6f8;
+    --uob-bg-2: #ffffff;
+    --uob-fg: #0d1b2a;
+    --uob-fg-muted: rgba(13, 27, 42, 0.62);
+    --uob-card: rgba(13, 27, 42, 0.045);
+    --uob-card-hover: rgba(13, 27, 42, 0.08);
+    --uob-border: rgba(13, 27, 42, 0.14);
+    --uob-accent: #0077a3;
+  }
+
+  .theme-ink {
+    --uob-bg: #101014;
+    --uob-bg-2: #1c1c22;
+    --uob-accent: #ffd54a;
+  }
+</style>
+</head>
+<body>
+
+<div class="spacer">
+  <div>
+    <h1>Course Drift</h1>
+    <p>
+      A parallax depth conveyor for course listings. The centre lane sits nearest
+      the viewer; outer lanes recede in scale, brightness and speed. Lane velocity
+      is coupled to your scroll velocity — scroll hard and the whole rig surges,
+      scroll back and it briefly runs the other way.
+    </p>
+    <p class="hint">Scroll down ↓</p>
+    <div class="themes">
+      <button type="button" data-theme="">Default</button>
+      <button type="button" data-theme="theme-light">Light</button>
+      <button type="button" data-theme="theme-ink">Ink</button>
+    </div>
+  </div>
+</div>
+
+<uob-course-drift
+  id="drift"
+  heading="Find your course"
+  intro="Over 400 courses across four campuses. Hover a card to see the detail, or filter by subject."
+  lanes="3"
+  speed="34"
+  scroll-coupling="0.55">
+  <script type="application/json">
+  [
+    { "title": "Architecture BA(Hons)", "subject": "Architecture & Design", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Moulsecoomb", "ucas": "K100", "entry": "120 UCAS points", "url": "#" },
+    { "title": "Graphic Design BA(Hons)", "subject": "Art & Media", "level": "Undergraduate", "duration": "3 years full-time", "campus": "City Campus", "ucas": "W210", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Computer Science BSc(Hons)", "subject": "Computing & Engineering", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Moulsecoomb", "ucas": "G400", "entry": "120 UCAS points", "url": "#" },
+    { "title": "Nursing (Adult) BSc(Hons)", "subject": "Health & Social Care", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Falmer", "ucas": "B740", "entry": "120 UCAS points", "url": "#" },
+    { "title": "Business Management BSc(Hons)", "subject": "Business & Law", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Moulsecoomb", "ucas": "N200", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Primary Education BA(Hons) with QTS", "subject": "Education", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Falmer", "ucas": "X120", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Interior Architecture BA(Hons)", "subject": "Architecture & Design", "level": "Undergraduate", "duration": "3 years full-time", "campus": "City Campus", "ucas": "W250", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Fine Art Painting BA(Hons)", "subject": "Art & Media", "level": "Undergraduate", "duration": "3 years full-time", "campus": "City Campus", "ucas": "W120", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Software Engineering MSc", "subject": "Computing & Engineering", "level": "Postgraduate", "duration": "1 year full-time", "campus": "Moulsecoomb", "entry": "2:2 honours degree", "url": "#" },
+    { "title": "Physiotherapy BSc(Hons)", "subject": "Health & Social Care", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Falmer", "ucas": "B160", "entry": "128 UCAS points", "url": "#" },
+    { "title": "Law LLB(Hons)", "subject": "Business & Law", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Moulsecoomb", "ucas": "M100", "entry": "120 UCAS points", "url": "#" },
+    { "title": "Sport & Exercise Science BSc(Hons)", "subject": "Sport & Health Science", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Falmer", "ucas": "C600", "entry": "120 UCAS points", "url": "#" },
+    { "title": "Product Design BSc(Hons)", "subject": "Architecture & Design", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Moulsecoomb", "ucas": "W240", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Photography BA(Hons)", "subject": "Art & Media", "level": "Undergraduate", "duration": "3 years full-time", "campus": "City Campus", "ucas": "W640", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Civil Engineering BEng(Hons)", "subject": "Computing & Engineering", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Moulsecoomb", "ucas": "H200", "entry": "120 UCAS points", "url": "#" },
+    { "title": "Occupational Therapy BSc(Hons)", "subject": "Health & Social Care", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Falmer", "ucas": "B920", "entry": "120 UCAS points", "url": "#" },
+    { "title": "Accounting & Finance BSc(Hons)", "subject": "Business & Law", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Moulsecoomb", "ucas": "N400", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Education MA", "subject": "Education", "level": "Postgraduate", "duration": "1 year full-time", "campus": "Falmer", "entry": "2:2 honours degree", "url": "#" },
+    { "title": "Pharmacy MPharm", "subject": "Pharmacy & Biosciences", "level": "Undergraduate", "duration": "4 years full-time", "campus": "Moulsecoomb", "ucas": "B230", "entry": "128 UCAS points", "url": "#" },
+    { "title": "Biomedical Science BSc(Hons)", "subject": "Pharmacy & Biosciences", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Moulsecoomb", "ucas": "B940", "entry": "120 UCAS points", "url": "#" },
+    { "title": "Digital Media Production BA(Hons)", "subject": "Art & Media", "level": "Undergraduate", "duration": "3 years full-time", "campus": "City Campus", "ucas": "P310", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Nutrition BSc(Hons)", "subject": "Sport & Health Science", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Falmer", "ucas": "B400", "entry": "112 UCAS points", "url": "#" },
+    { "title": "Artificial Intelligence MSc", "subject": "Computing & Engineering", "level": "Postgraduate", "duration": "1 year full-time", "campus": "Moulsecoomb", "entry": "2:2 honours degree", "url": "#" },
+    { "title": "Social Work BSc(Hons)", "subject": "Health & Social Care", "level": "Undergraduate", "duration": "3 years full-time", "campus": "Falmer", "ucas": "L500", "entry": "112 UCAS points", "url": "#" }
+  ]
+  </script>
+</uob-course-drift>
+
+<div class="spacer">
+  <p class="hint">Scroll back up to see the lanes run the other way.</p>
+</div>
+
+<script type="module" src="../src/uob-course-drift.js"></script>
+<script>
+  const drift = document.getElementById('drift');
+  document.querySelectorAll('.themes button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      drift.className = btn.dataset.theme;
+    });
+  });
+</script>
+
+</body>
+</html>
