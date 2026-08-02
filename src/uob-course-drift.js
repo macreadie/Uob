@@ -240,6 +240,9 @@ const TEMPLATE_CSS = `
   position: relative;
   height: calc(var(--uob-card-h) * var(--scale, 1));
   opacity: var(--lane-opacity, 1);
+  /* Horizontal gestures are ours to scrub with; vertical still scrolls
+     the page, so the element never traps a touch user. */
+  touch-action: pan-y;
 }
 
 .lane__track {
@@ -289,8 +292,14 @@ const TEMPLATE_CSS = `
   transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.card:hover .card__inner,
-.card:focus-visible .card__inner { transform: rotateY(180deg); }
+/* Hover only where hovering exists. On touch, .is-flipped does the work —
+   otherwise iOS fires a sticky phantom hover and the card sticks face-down. */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .card__inner { transform: rotateY(180deg); }
+}
+
+.card:focus-visible .card__inner,
+.card.is-flipped .card__inner { transform: rotateY(180deg); }
 
 .card__face {
   position: absolute;
@@ -448,6 +457,7 @@ const TEMPLATE_CSS = `
      silently eats the left inset. */
   scroll-padding-inline: var(--uob-edge);
   opacity: 1;
+  touch-action: auto;
 }
 
 :host([data-static]) .lane__track {
@@ -475,7 +485,7 @@ const TEMPLATE_CSS = `
 
 class UobCourseDrift extends HTMLElement {
   static get observedAttributes() {
-    return ['heading', 'intro', 'src'];
+    return ['heading', 'intro', 'src', 'lanes', 'no-filters'];
   }
 
   constructor() {
@@ -522,6 +532,16 @@ class UobCourseDrift extends HTMLElement {
     };
     this._motionQuery.addEventListener('change', this._onMotionChange);
 
+    // A tapped-open card must close when the reader taps anywhere else on the
+    // page, not just elsewhere inside this element.
+    this._onDocPointer = (e) => {
+      if (!this._stage?.querySelector('.card.is-flipped')) return;
+      const onCard = e.composedPath()
+        .some((n) => n.nodeType === 1 && n.classList?.contains('card'));
+      if (!onCard) this._unflip();
+    };
+    document.addEventListener('pointerdown', this._onDocPointer, true);
+
     this._resizeObserver = new ResizeObserver(() => this._layout());
 
     this._load().then(() => {
@@ -535,6 +555,9 @@ class UobCourseDrift extends HTMLElement {
     window.removeEventListener('scroll', this._onScroll);
     this._resizeObserver?.disconnect();
     this._motionQuery?.removeEventListener('change', this._onMotionChange);
+    if (this._onDocPointer) {
+      document.removeEventListener('pointerdown', this._onDocPointer, true);
+    }
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -726,6 +749,8 @@ class UobCourseDrift extends HTMLElement {
       if (card) this._markKin(card.dataset.subject);
       else this._clearKin();
     });
+
+    this._bindDrag(stage);
 
     stage.addEventListener('focusin', (e) => {
       this._speedMulTarget = 0.12;
@@ -938,6 +963,107 @@ class UobCourseDrift extends HTMLElement {
     return card;
   }
 
+  // ---------------------------------------------------------------- touch
+
+  /** True on touch and other devices with no real hover. */
+  get _isCoarse() {
+    return !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  }
+
+  /**
+   * Direct manipulation: drag or swipe a lane to scrub it, and release to
+   * fling. Without this a touch user can only watch — every other affordance
+   * in the element is driven by hover.
+   */
+  _bindDrag(stage) {
+    let drag = null;
+
+    stage.addEventListener('pointerdown', (e) => {
+      // Static mode uses native scrolling; leave it alone.
+      if (this._reduced || !e.isPrimary) return;
+      const laneEl = e.target.closest?.('.lane');
+      const lane = this._lanes.find((l) => l.el === laneEl);
+      if (!lane || !lane.setWidth) return;
+      drag = {
+        lane, id: e.pointerId,
+        startX: e.clientX, startY: e.clientY,
+        lastX: e.clientX, lastT: performance.now(),
+        v: 0, engaged: false,
+      };
+    });
+
+    stage.addEventListener('pointermove', (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+
+      if (!drag.engaged) {
+        const dx = e.clientX - drag.startX;
+        const dy = e.clientY - drag.startY;
+        // Only claim the gesture once it is clearly horizontal, so a vertical
+        // swipe that starts on a card still scrolls the page.
+        if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return;
+        drag.engaged = true;
+        this._dragging = true;
+        stage.setPointerCapture(e.pointerId);
+      }
+
+      const now = performance.now();
+      const step = e.clientX - drag.lastX;
+      drag.v = (step / Math.max(1, now - drag.lastT)) * 1000;
+      drag.lastX = e.clientX;
+      drag.lastT = now;
+
+      const lane = drag.lane;
+      lane.offset = (((lane.offset + step) % lane.setWidth) + lane.setWidth) % lane.setWidth;
+      lane.track.style.transform =
+        `translate3d(${(lane.offset - lane.setWidth).toFixed(2)}px, 0, 0)`;
+    });
+
+    const end = () => {
+      if (!drag) return;
+      const { engaged, v, lane } = drag;
+      drag = null;
+      this._dragging = false;
+      if (!engaged) return;
+
+      // Swallow the click that follows a drag, or the card navigates.
+      this._suppressClick = true;
+      setTimeout(() => { this._suppressClick = false; }, 0);
+
+      // Carry the throw into the shared momentum, in the lane's own direction.
+      const cap = 650;
+      this._scrollBoost = Math.max(-cap, Math.min(cap, v * lane.dir * 0.5));
+    };
+
+    stage.addEventListener('pointerup', end);
+    stage.addEventListener('pointercancel', end);
+
+    stage.addEventListener('click', (e) => {
+      if (this._suppressClick) { e.preventDefault(); return; }
+      if (!this._isCoarse) return;
+
+      const card = e.target.closest?.('.card');
+      if (!card || card.classList.contains('is-dim')) {
+        this._unflip();
+        return;
+      }
+      // First tap turns the card over, second tap follows the link — the
+      // standard touch equivalent of hover-to-peek.
+      if (card.classList.contains('is-flipped')) return;
+      e.preventDefault();
+      this._unflip();
+      card.classList.add('is-flipped');
+      this._markKin(card.dataset.subject);
+      this._speedMulTarget = 0.12;
+    });
+  }
+
+  _unflip() {
+    this._stage?.querySelectorAll('.card.is-flipped')
+      .forEach((c) => c.classList.remove('is-flipped'));
+    this._speedMulTarget = 1;
+    this._clearKin();
+  }
+
   // ---------------------------------------------------------------- layout
 
   /**
@@ -1037,7 +1163,7 @@ class UobCourseDrift extends HTMLElement {
 
     const base = parseFloat(this.getAttribute('speed'));
     const baseSpeed = Number.isFinite(base) ? base : 34;
-    const gate = this._paused ? 0 : this._speedMul;
+    const gate = this._paused || this._dragging ? 0 : this._speedMul;
 
     for (const lane of this._lanes) {
       if (!lane.setWidth) continue;

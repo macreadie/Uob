@@ -42,6 +42,10 @@ glance.
 instead of pulling them out of the lanes. The motion never reflows or stutters,
 and the result count is announced to screen readers.
 
+**Touch is a first input, not a fallback.** Swipe a lane to scrub it and let go
+to fling it; tap a card to turn it over; tap again to open the course. Vertical
+swipes still scroll the page.
+
 ## Usage
 
 ### Supplying data
@@ -140,6 +144,22 @@ Per-subject accents are generated from a fixed hue set and assigned in order of
 first appearance, so colours are stable for a given course list without anyone
 maintaining a colour map.
 
+## Touch
+
+Every affordance above is driven by hover, which does not exist on a
+touchscreen, so each one has a touch equivalent:
+
+| Gesture | |
+| --- | --- |
+| Swipe a lane | Scrubs it directly; releasing carries the throw into the drift. |
+| Tap a card | Turns it over and lights its subject across the lanes. |
+| Tap it again | Follows the link. Tapping anywhere else turns it back. |
+| Swipe up or down | Scrolls the page as normal — the lanes only claim a gesture once it is clearly horizontal. |
+
+The hover-to-flip rule is inside `@media (hover: hover) and (pointer: fine)`.
+Without that gate iOS applies a sticky phantom hover and cards stay face-down
+after a tap.
+
 ## Accessibility
 
 This is a motion-heavy element, so the accessibility work is not incidental:
@@ -202,8 +222,14 @@ constellation highlight, filtering, tab-order exclusion of clones, the pause
 control, focus handling, the host-scroll regression, reduced-motion mode, and
 mobile layout.
 
+`test/touch.test.mjs` runs the same component under iPad emulation and covers a
+further 13: tap-to-flip, second-tap navigation, tap-away dismissal, swipe
+scrubbing, fling, and the guarantee that a vertical swipe is never hijacked.
+
 ```bash
-npm i -D playwright && node test/drift.test.mjs
+npm i -D playwright
+node test/drift.test.mjs
+node test/touch.test.mjs
 ```
 
 ## Files
@@ -212,7 +238,8 @@ npm i -D playwright && node test/drift.test.mjs
 | --- | --- |
 | `src/uob-course-drift.js` | The component. No dependencies. |
 | `demo/index.html` | Demo page with sample data and theme switcher. |
-| `test/drift.test.mjs` | Playwright behaviour suite. |
+| `test/drift.test.mjs` | Playwright behaviour suite (desktop, keyboard, reduced motion). |
+| `test/touch.test.mjs` | Playwright behaviour suite (iPad emulation). |
 
 > The course data in `demo/index.html` is **illustrative sample data**. Course
 > titles and campuses are realistic but the UCAS codes and entry requirements
